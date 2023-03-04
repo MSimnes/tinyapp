@@ -34,12 +34,12 @@ app.get('/urls.json', (req, res) => {
 app.get('/hello', (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
-
+// display list of shortened urls
 app.get('/urls', (req, res) => {
   const templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
 });
-
+// update database and redirect to the id's own page
 app.post("/urls", (req, res) => {
   const newId = generateRandomString();
   urlDatabase[newId] = req.body.longURL;
@@ -53,4 +53,9 @@ app.get("/urls/new", (req, res) => {
 app.get('/urls/:id', (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
   res.render("urls_show", templateVars);
+});
+// redirect to actual site of long URL
+app.get('/u/:id', (req, res) => {
+  const longURL = urlDatabase[req.params.id];
+  res.redirect(longURL);
 });
