@@ -15,7 +15,6 @@ const generateRandomString = function() {
   return result;
 };
 
-
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
@@ -42,8 +41,9 @@ app.get('/urls', (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body);
-  res.send("Ok");
+  const newId = generateRandomString();
+  urlDatabase[newId] = req.body.longURL;
+  res.redirect(`urls/${newId}`);
 });
 
 app.get("/urls/new", (req, res) => {
