@@ -54,13 +54,22 @@ app.get('/urls/:id', (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
   res.render("urls_show", templateVars);
 });
+
 // redirect to actual site of long URL
 app.get('/u/:id', (req, res) => {
   const longURL = urlDatabase[req.params.id];
   res.redirect(longURL);
 });
+
 // route for delete button and removal from database
 app.post('/urls/:id/delete', (req, res) => {
   delete urlDatabase[req.params.id];
+  res.redirect("/urls");
+});
+// route to update longURL from form input and redirect to index
+app.post('/urls/:id/update', (req, res) => {
+  const id = req.params.id;
+  const newURL = req.body.longURL;
+  urlDatabase[id] = newURL;
   res.redirect("/urls");
 });
