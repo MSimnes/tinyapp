@@ -83,8 +83,13 @@ app.post('/urls/:id/update', (req, res) => {
   urlDatabase[id] = newURL;
   res.redirect('/urls');
 });
-// route for login form
+// route for login redirect to index
 app.post('/urls/login', (req, res) => {
   const cookie = req.body.username;
   res.cookie('username', cookie).redirect('/urls');
+});
+// route for logout redierct to index
+app.post('/urls/logout', (req, res) => {
+  // const cookie = req.body.username;
+  res.clearCookie('username').redirect('/urls');
 });
