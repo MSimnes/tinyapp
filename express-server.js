@@ -21,21 +21,15 @@ const urlDatabase = {
   'b2xVn2': 'http://www.lighthouselabs.ca',
   '9sm5xK': 'http://www.google.com'
 };
+
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}`);
-});
-
-app.get('/', (req, res) => {
-  res.send('Hello');
 });
 
 app.get('/urls.json', (req, res) => {
   res.json(urlDatabase);
 });
 
-app.get('/hello', (req, res) => {
-  res.send('<html><body>Hello <b>World</b></body></html>\n');
-});
 // display list of shortened urls
 app.get('/urls', (req, res) => {
   const templateVars = {
@@ -44,6 +38,7 @@ app.get('/urls', (req, res) => {
   };
   res.render('urls_index', templateVars);
 });
+
 // update database and redirect to the id's own page
 app.post('/urls', (req, res) => {
   const newId = generateRandomString();
@@ -76,6 +71,7 @@ app.post('/urls/:id/delete', (req, res) => {
   delete urlDatabase[req.params.id];
   res.redirect('/urls');
 });
+
 // route to update longURL from form input and redirect to index
 app.post('/urls/:id/update', (req, res) => {
   const id = req.params.id;
@@ -83,13 +79,14 @@ app.post('/urls/:id/update', (req, res) => {
   urlDatabase[id] = newURL;
   res.redirect('/urls');
 });
+
 // route for login redirect to index
 app.post('/urls/login', (req, res) => {
   const cookie = req.body.username;
   res.cookie('username', cookie).redirect('/urls');
 });
+
 // route for logout redierct to index
 app.post('/urls/logout', (req, res) => {
-  // const cookie = req.body.username;
   res.clearCookie('username').redirect('/urls');
 });
