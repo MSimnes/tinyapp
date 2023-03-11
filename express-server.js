@@ -107,6 +107,12 @@ app.post('/urls/register', (req, res) => {
   res.redirect('/urls');
 });
 
+app.get('/login', (req, res) => {
+  const user = users[req.cookies['user_id']] || null;
+  const templateVars = {user};
+  res.render('urls_login', templateVars);
+});
+
 // redirect to actual site of long URL
 app.get('/u/:id', (req, res) => {
   const longURL = urlDatabase[req.params.id];
