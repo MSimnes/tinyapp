@@ -17,6 +17,15 @@ const generateRandomString = function() {
   return result;
 };
 
+const userLookup = function(email) {
+  for (let user in users) {
+    if (email === users[user].email) {
+      return user;
+    }
+  }
+  return null;
+};
+
 const urlDatabase = {
   'b2xVn2': 'http://www.lighthouselabs.ca',
   '9sm5xK': 'http://www.google.com'
@@ -76,8 +85,15 @@ app.get('/register', (req, res) => {
 
 // generate unique id, create new user, add new user to users, save cookies
 app.post('/urls/register', (req, res) => {
-  const email = req.body.email;
-  const password = req.body.password;
+  const {email, password} = req.body;
+  // console.log("email ", email);
+  if (email === "" || password === "") {
+    res.status(400).send('Please fill in all fields');
+    return;
+  } else if (userLookup(email)) {
+    res.status(400).send("Email already exists");
+    return;
+  } else;
   const id = generateRandomString();
   users[id] = {
     id,
@@ -85,7 +101,9 @@ app.post('/urls/register', (req, res) => {
     password,
   };
   res.cookie('user_id', id);
-  console.log(id);
+  // console.log("id", id,);
+  // console.log("users[id] ", users[id]);
+  // console.log("Current users object", users);
   res.redirect('/urls');
 });
 
