@@ -22,6 +22,10 @@ const urlDatabase = {
   '9sm5xK': 'http://www.google.com'
 };
 
+const users = {
+
+};
+
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}`);
 });
@@ -32,9 +36,10 @@ app.get('/urls.json', (req, res) => {
 
 // display list of shortened urls
 app.get('/urls', (req, res) => {
+  const user = users[req.cookies['user_id']] || null;
   const templateVars = {
     urls: urlDatabase,
-    username: req.cookies['username'],
+    user
   };
   res.render('urls_index', templateVars);
 });
@@ -47,22 +52,41 @@ app.post('/urls', (req, res) => {
 });
 
 app.get('/urls/new', (req, res) => {
-  const templateVars = {username: req.cookies['username']};
+  const user = users[req.cookies['user_id']] || null;
+  const templateVars = {user};
   res.render('urls_new', templateVars);
 });
 
 app.get('/urls/:id', (req, res) => {
+  const user = users[req.cookies['user_id']] || null;
   const templateVars = {
+    user,
     id: req.params.id,
     longURL: urlDatabase[req.params.id],
-    username: req.cookies['username']
   };
   res.render('urls_show', templateVars);
 });
 
+// render register page
 app.get('/register', (req, res) => {
-  const templateVars = {username: req.cookies['username']};
+  const user = users[req.cookies['user_id']] || null;
+  const templateVars = {user};
   res.render('urls_register', templateVars);
+});
+
+// generate unique id, create new user, add new user to users, save cookies
+app.post('/urls/register', (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+  const id = generateRandomString();
+  users[id] = {
+    id,
+    email,
+    password,
+  };
+  res.cookie('user_id', id);
+  console.log(id);
+  res.redirect('/urls');
 });
 
 // redirect to actual site of long URL
@@ -87,11 +111,11 @@ app.post('/urls/:id/update', (req, res) => {
 
 // route for login redirect to index
 app.post('/urls/login', (req, res) => {
-  const cookie = req.body.username;
-  res.cookie('username', cookie).redirect('/urls');
+  const username = req.body.id;
+  res.cookie('username', username).redirect('/urls');
 });
 
 // route for logout redierct to index
 app.post('/urls/logout', (req, res) => {
-  res.clearCookie('username').redirect('/urls');
+  res.clearCookie('user_id').redirect('/urls');
 });
