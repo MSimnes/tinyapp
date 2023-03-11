@@ -20,7 +20,8 @@ const generateRandomString = function() {
 const userLookup = function(email) {
   for (let user in users) {
     if (email === users[user].email) {
-      return user;
+      console.log("USER obj from userLookup", users[user]);
+      return users[user];
     }
   }
   return null;
@@ -91,7 +92,9 @@ app.post('/urls/register', (req, res) => {
     res.status(400).send('Please fill in all fields');
     return;
   } else if (userLookup(email)) {
-    res.status(400).send("Email already exists");
+    //current compass directions say to send 400 and message,
+    //instead i redirected to login
+    res.status(400).redirect('/login');
     return;
   } else;
   const id = generateRandomString();
@@ -107,10 +110,32 @@ app.post('/urls/register', (req, res) => {
   res.redirect('/urls');
 });
 
+// render the login page
 app.get('/login', (req, res) => {
   const user = users[req.cookies['user_id']] || null;
   const templateVars = {user};
   res.render('urls_login', templateVars);
+});
+
+// route for login redirect to index
+app.post('/urls/login', (req, res) => {
+  const {email, password} = req.body;
+  if (userLookup(email) === null) {
+    /// current compass directions say to issue 403 with a response
+    /// instead I redirected to /register
+    res.status(403).redirect('/register');
+    return;
+  }
+  const user = userLookup(email);
+  // console.log("user obj---", user);
+  if (userLookup(email)) {
+    if (password !== user.password) {
+      res.status(403).send("Wrong password!");
+      return;
+    } else {
+      res.cookie('user_id', user.id).redirect('/urls');
+    }
+  }
 });
 
 // redirect to actual site of long URL
@@ -133,13 +158,8 @@ app.post('/urls/:id/update', (req, res) => {
   res.redirect('/urls');
 });
 
-// route for login redirect to index
-app.post('/urls/login', (req, res) => {
-  const username = req.body.id;
-  res.cookie('username', username).redirect('/urls');
-});
 
 // route for logout redierct to index
 app.post('/urls/logout', (req, res) => {
-  res.clearCookie('user_id').redirect('/urls');
+  res.clearCookie('user_id').redirect('/login');
 });
