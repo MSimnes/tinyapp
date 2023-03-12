@@ -56,6 +56,10 @@ app.get('/urls', (req, res) => {
 
 // update database and redirect to the id's own page
 app.post('/urls', (req, res) => {
+  if (!req.user) {
+    res.send("Must login first.");
+    return;
+  }
   const newId = generateRandomString();
   urlDatabase[newId] = req.body.longURL;
   res.redirect(`urls/${newId}`);
@@ -64,7 +68,9 @@ app.post('/urls', (req, res) => {
 app.get('/urls/new', (req, res) => {
   const user = users[req.cookies['user_id']] || null;
   const templateVars = {user};
-  res.render('urls_new', templateVars);
+  if (!user) {
+    res.redirect('/login');
+  } else res.render('urls_new', templateVars);
 });
 
 app.get('/urls/:id', (req, res) => {
@@ -81,7 +87,9 @@ app.get('/urls/:id', (req, res) => {
 app.get('/register', (req, res) => {
   const user = users[req.cookies['user_id']] || null;
   const templateVars = {user};
-  res.render('urls_register', templateVars);
+  if (user) {
+    res.redirect('/urls');
+  } else res.render('urls_register', templateVars);
 });
 
 // generate unique id, create new user, add new user to users, save cookies
@@ -114,7 +122,9 @@ app.post('/urls/register', (req, res) => {
 app.get('/login', (req, res) => {
   const user = users[req.cookies['user_id']] || null;
   const templateVars = {user};
-  res.render('urls_login', templateVars);
+  if (user) {
+    res.redirect('/urls');
+  } else res.render('urls_login', templateVars);
 });
 
 // route for login redirect to index
@@ -140,6 +150,12 @@ app.post('/urls/login', (req, res) => {
 
 // redirect to actual site of long URL
 app.get('/u/:id', (req, res) => {
+  for (let id in urlDatabase) {
+    if (id !== urlDatabase[urlDatabase.id]) {
+      res.send("We don't have that one yet.");
+      return;
+    }
+  }
   const longURL = urlDatabase[req.params.id];
   res.redirect(longURL);
 });
