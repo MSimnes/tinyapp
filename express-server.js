@@ -1,13 +1,16 @@
 const express = require('express');
 const app = express();
 const PORT = 8080;
-const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
 
 
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key']
+}));
 
 const generateRandomString = function() {
   let result = '';
@@ -74,7 +77,7 @@ app.listen(PORT, () => {
 
 // display list of shortened urls
 app.get('/urls', (req, res) => {
-  const id = req.cookies['user_id'];
+  const id = req.session['user_id'];
   const user = users[id];
   if (!user) {
     return res.redirect("/login");
@@ -89,11 +92,11 @@ app.get('/urls', (req, res) => {
 
 // update database and redirect to the id's own page
 app.post('/urls', (req, res) => {
-  if (!req.cookies.user_id) {
+  if (!req.session.user_id) {
     return res.send("Must login first.");
   }
   const newId = generateRandomString();
-  const userId = req.cookies.user_id;
+  const userId = req.session.user_id;
   const { longURL } = req.body;
   urlDatabase[newId] = {
     userId,
@@ -103,7 +106,7 @@ app.post('/urls', (req, res) => {
 });
 
 app.get('/urls/new', (req, res) => {
-  const user = users[req.cookies['user_id']];
+  const user = users[req.session['user_id']];
   if (!user) {
     return res.redirect('/login');
   }
@@ -112,7 +115,7 @@ app.get('/urls/new', (req, res) => {
 });
 
 app.get('/urls/:id', (req, res) => {
-  const user = users[req.cookies['user_id']];
+  const user = users[req.session['user_id']];
   const { id } = req.params;
   const urls = urlDatabase;
   // return message if id does not exist
@@ -138,7 +141,7 @@ app.get('/urls/:id', (req, res) => {
 
 // render register page
 app.get('/register', (req, res) => {
-  const user = users[req.cookies['user_id']];
+  const user = users[req.session['user_id']];
   if (user) {
     return res.redirect('/urls');
   }
@@ -146,7 +149,7 @@ app.get('/register', (req, res) => {
   return res.render('urls_register', templateVars);
 });
 
-// generate unique id, create new user, add new user to users, save cookies
+// generate unique id, create new user, add new user to users, save session
 app.post('/urls/register', (req, res) => {
   const {email, password} = req.body;
   const hashedPassword = bcrypt.hashSync(password, 10);
@@ -162,13 +165,13 @@ app.post('/urls/register', (req, res) => {
     email,
     hashedPassword,
   };
-  res.cookie('user_id', id);
+  req.session.user_id = id;
   res.redirect('/urls');
 });
 
 // render the login page
 app.get('/login', (req, res) => {
-  const user = users[req.cookies['user_id']];
+  const user = users[req.session['user_id']];
   if (user) {
     return res.redirect('/urls');
   }
@@ -188,7 +191,8 @@ app.post('/urls/login', (req, res) => {
   if (!loggedIn) {
     return res.status(403).send("Wrong password!");
   } else {
-    return res.cookie('user_id', user.id).redirect('/urls');
+    req.session.user_id = user.id;
+    return res.redirect('/urls');
   }
 });
 
@@ -204,7 +208,7 @@ app.get('/u/:id', (req, res) => {
 
 // route for delete button and removal from database
 app.post('/urls/:id/delete', (req, res) => {
-  const user = users[req.cookies['user_id']];
+  const user = users[req.session['user_id']];
   const { id } = req.params;
   const urls = urlDatabase;
   // return message if id does not exist
@@ -225,10 +229,10 @@ app.post('/urls/:id/delete', (req, res) => {
 
 // route to update longURL from form input and redirect to index
 app.post('/urls/:id/update', (req, res) => {
-  const user = users[req.cookies['user_id']];
+  const user = users[req.session['user_id']];
   const { id } = req.params;
   const urls = urlDatabase;
-  const userId = req.cookies['user_id'];
+  const userId = req.session['user_id'];
   // return message if id does not exist
   if (!urls[id]) {
     return res.status(404).send("URL does not exist");
@@ -249,8 +253,8 @@ app.post('/urls/:id/update', (req, res) => {
   return res.redirect('/urls');
 });
 
-
 // route for logout redirect to index
 app.post('/urls/logout', (req, res) => {
-  res.clearCookie('user_id').redirect('/login');
+  req.session = null;
+  res.redirect('/login');
 });
