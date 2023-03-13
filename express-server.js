@@ -22,14 +22,8 @@ const generateRandomString = function() {
   return result;
 };
 
-const userLookup = function(email) {
-  for (let user in users) {
-    if (email === users[user].email) {
-      return users[user];
-    }
-  }
-  return null;
-};
+const { getUserByEmail } = require('./helpers');
+
 
 /**
  * Returns an object containing short URL keys and corresponding long URL values
@@ -156,7 +150,7 @@ app.post('/urls/register', (req, res) => {
   if (!email || !password) {
     return res.status(400).send('Please fill in all fields');
   }
-  if (userLookup(email)) {
+  if (getUserByEmail(email, urlDatabase)) {
     return res.status(400).redirect('/login');
   }
   const id = generateRandomString();
@@ -165,7 +159,9 @@ app.post('/urls/register', (req, res) => {
     email,
     hashedPassword,
   };
+  console.log("id-- ", id);
   req.session.user_id = id;
+  console.log("req.session.user_id ---", req.session.user_id);
   res.redirect('/urls');
 });
 
@@ -182,7 +178,7 @@ app.get('/login', (req, res) => {
 // route for login redirect to index
 app.post('/urls/login', (req, res) => {
   const {email, password} = req.body;
-  const user = userLookup(email);
+  const user = getUserByEmail(email, users);
   if (!user) {
     return res.status(403).redirect('/register');
   }
@@ -192,7 +188,7 @@ app.post('/urls/login', (req, res) => {
     return res.status(403).send("Wrong password!");
   } else {
     req.session.user_id = user.id;
-    return res.redirect('/urls');
+    res.redirect('/urls');
   }
 });
 
