@@ -117,6 +117,18 @@ app.get('/urls/:id', (req, res) => {
   const user = users[req.cookies['user_id']] || null;
   const { id } = req.params;
   const urls = urlDatabase;
+  // return message if id does not exist
+  if (!urls[id]) {
+    return res.status(404).send("URL does not exist");
+  }
+  // return message if not logged in
+  if (!user) {
+    return res.status(404).send("Please login to view URLs");
+  }
+  // return message if user does not own url
+  if (urls[id].userId !== user.id) {
+    return res.status(404).send("URL does not belong to user");
+  }
   const templateVars = {
     urls,
     user,
@@ -190,16 +202,44 @@ app.get('/u/:id', (req, res) => {
 
 // route for delete button and removal from database
 app.post('/urls/:id/delete', (req, res) => {
+  const user = users[req.cookies['user_id']] || null;
   const { id } = req.params;
+  const urls = urlDatabase;
+  // return message if id does not exist
+  if (!urls[id]) {
+    return res.status(404).send("URL does not exist");
+  }
+  // return message if not logged in
+  if (!user) {
+    return res.status(404).send("Please login to view URLs");
+  }
+  // return message if user does not own url
+  if (urls[id].userId !== user.id) {
+    return res.status(404).send("URL does not belong to user");
+  }
   delete urlDatabase[id];
   res.redirect('/urls');
 });
 
 // route to update longURL from form input and redirect to index
 app.post('/urls/:id/update', (req, res) => {
+  const user = users[req.cookies['user_id']] || null;
   const { id } = req.params;
+  const urls = urlDatabase;
   const { longURL } = req.body;
   const userId = req.cookies['user_id'];
+  // return message if id does not exist
+  if (!urls[id]) {
+    return res.status(404).send("URL does not exist");
+  }
+  // return message if not logged in
+  if (!user) {
+    return res.status(404).send("Please login to view URLs");
+  }
+  // return message if user does not own url
+  if (urls[id].userId !== user.id) {
+    return res.status(404).send("URL does not belong to user");
+  }
   urlDatabase[id] = {
     longURL,
     userId
@@ -208,7 +248,7 @@ app.post('/urls/:id/update', (req, res) => {
 });
 
 
-// route for logout redierct to index
+// route for logout redirect to index
 app.post('/urls/logout', (req, res) => {
   res.clearCookie('user_id').redirect('/login');
 });
