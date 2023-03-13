@@ -26,14 +26,38 @@ const userLookup = function(email) {
   return null;
 };
 
+/**
+ * Returns an object containing short URL keys and corresponding long URL values
+ * for a given user ID.
+ * @param {string} user_Id - User ID to match against the 'userId' property in the 'urlDatabase' object.
+ * @returns {Object} An object containing short URL keys and corresponding long URL values for the given user ID.
+ */
+const urlsForUserId = function(user_Id) {
+  const matchingURLsObj = {};
+  for (let key in urlDatabase) {
+    if (urlDatabase[key]['userId'] === user_Id) {
+      matchingURLsObj[key] = urlDatabase[key]['longURL'];
+    }
+  }
+  return matchingURLsObj;
+};
+
 const urlDatabase = {
   'b2xVn2': {
     longURL: 'http://www.lighthouselabs.ca',
-    userId: null
+    userId: 'id1'
   },
   '9sm5xK': {
     longURL: 'http://www.google.com',
-    userId: null
+    userId: 'id2'
+  },
+  '9sm5xL': {
+    longURL: 'http://www.bing.com',
+    userId: 'id2'
+  },
+  '9sm5xM': {
+    longURL: 'http://www.yahoo.com',
+    userId: 'id2'
   }
 };
 
@@ -52,14 +76,16 @@ app.get('/urls.json', (req, res) => {
 
 // display list of shortened urls
 app.get('/urls', (req, res) => {
-  const user = users[req.cookies['user_id']] || null;
-  const urls = urlDatabase;
-  const longURL = urls.longURL;
+  const id = req.cookies['user_id'];
+  const user = users[id] || null;
+  const userSpecificUrls = urlsForUserId(id);
   const templateVars = {
-    longURL,
-    urls,
+    userSpecificUrls,
     user
   };
+  if (user === null) {
+    return res.redirect("/login");
+  }
   res.render('urls_index', templateVars);
 });
 
@@ -173,8 +199,10 @@ app.post('/urls/:id/delete', (req, res) => {
 app.post('/urls/:id/update', (req, res) => {
   const { id } = req.params;
   const { longURL } = req.body;
+  const userId = req.cookies['user_id'];
   urlDatabase[id] = {
     longURL,
+    userId
   };
   res.redirect('/urls');
 });
