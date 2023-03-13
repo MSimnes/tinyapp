@@ -28,10 +28,10 @@
           </tr>
         </thead>
         <tbody>
-          <% for (let id in urls) { %>
+          <% for (let id in userSpecificUrls) { %>
             <tr>
               <td><%= id %></td>
-              <td><%= urls[id].longURL %></td>
+              <td><%= userSpecificUrls[id] %></td>
               <td>
               <form method="GET" action="/urls/<%= id %>">
                 <button type="submit" style=color:blue class="btn btn-primary" >Edit</button>
