@@ -2,6 +2,8 @@ const express = require('express');
 const app = express();
 const PORT = 8080;
 const cookieParser = require('cookie-parser');
+const bcrypt = require('bcryptjs');
+
 
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
@@ -147,6 +149,7 @@ app.get('/register', (req, res) => {
 // generate unique id, create new user, add new user to users, save cookies
 app.post('/urls/register', (req, res) => {
   const {email, password} = req.body;
+  const hashedPassword = bcrypt.hashSync(password, 10);
   if (!email || !password) {
     return res.status(400).send('Please fill in all fields');
   }
@@ -157,7 +160,7 @@ app.post('/urls/register', (req, res) => {
   users[id] = {
     id,
     email,
-    password,
+    hashedPassword,
   };
   res.cookie('user_id', id);
   res.redirect('/urls');
@@ -180,7 +183,9 @@ app.post('/urls/login', (req, res) => {
   if (!user) {
     return res.status(403).redirect('/register');
   }
-  if (password !== user.password) {
+  const hashedPassword = user.hashedPassword;
+  const loggedIn = bcrypt.compareSync(password, hashedPassword);
+  if (!loggedIn) {
     return res.status(403).send("Wrong password!");
   } else {
     return res.cookie('user_id', user.id).redirect('/urls');
