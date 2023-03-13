@@ -32,10 +32,10 @@ const userLookup = function(email) {
  * @param {string} user_Id - User ID to match against the 'userId' property in the 'urlDatabase' object.
  * @returns {Object} An object containing short URL keys and corresponding long URL values for the given user ID.
  */
-const urlsForUserId = function(user_Id) {
+const urlsForUserId = function(userId) {
   const matchingURLsObj = {};
   for (let key in urlDatabase) {
-    if (urlDatabase[key]['userId'] === user_Id) {
+    if (urlDatabase[key]['userId'] === userId) {
       matchingURLsObj[key] = urlDatabase[key]['longURL'];
     }
   }
@@ -70,32 +70,27 @@ app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}`);
 });
 
-app.get('/urls.json', (req, res) => {
-  res.json(urlDatabase);
-});
-
 // display list of shortened urls
 app.get('/urls', (req, res) => {
   const id = req.cookies['user_id'];
-  const user = users[id] || null;
+  const user = users[id];
+  if (!user) {
+    return res.redirect("/login");
+  }
   const userSpecificUrls = urlsForUserId(id);
   const templateVars = {
     userSpecificUrls,
     user
   };
-  if (user === null) {
-    return res.redirect("/login");
-  }
   res.render('urls_index', templateVars);
 });
 
 // update database and redirect to the id's own page
 app.post('/urls', (req, res) => {
-  const newId = generateRandomString();
   if (!req.cookies.user_id) {
-    res.send("Must login first.");
-    return;
+    return res.send("Must login first.");
   }
+  const newId = generateRandomString();
   const userId = req.cookies.user_id;
   const { longURL } = req.body;
   urlDatabase[newId] = {
@@ -106,15 +101,16 @@ app.post('/urls', (req, res) => {
 });
 
 app.get('/urls/new', (req, res) => {
-  const user = users[req.cookies['user_id']] || null;
-  const templateVars = {user};
+  const user = users[req.cookies['user_id']];
   if (!user) {
-    res.redirect('/login');
-  } else res.render('urls_new', templateVars);
+    return res.redirect('/login');
+  }
+  const templateVars = {user};
+  res.render('urls_new', templateVars);
 });
 
 app.get('/urls/:id', (req, res) => {
-  const user = users[req.cookies['user_id']] || null;
+  const user = users[req.cookies['user_id']];
   const { id } = req.params;
   const urls = urlDatabase;
   // return message if id does not exist
@@ -140,21 +136,23 @@ app.get('/urls/:id', (req, res) => {
 
 // render register page
 app.get('/register', (req, res) => {
-  const user = users[req.cookies['user_id']] || null;
-  const templateVars = {user};
+  const user = users[req.cookies['user_id']];
   if (user) {
-    res.redirect('/urls');
-  } else res.render('urls_register', templateVars);
+    return res.redirect('/urls');
+  }
+  const templateVars = {user};
+  return res.render('urls_register', templateVars);
 });
 
 // generate unique id, create new user, add new user to users, save cookies
 app.post('/urls/register', (req, res) => {
   const {email, password} = req.body;
-  if (email === "" || password === "") {
+  if (!email || !password) {
     return res.status(400).send('Please fill in all fields');
-  } else if (userLookup(email)) {
+  }
+  if (userLookup(email)) {
     return res.status(400).redirect('/login');
-  } else;
+  }
   const id = generateRandomString();
   users[id] = {
     id,
@@ -167,26 +165,25 @@ app.post('/urls/register', (req, res) => {
 
 // render the login page
 app.get('/login', (req, res) => {
-  const user = users[req.cookies['user_id']] || null;
-  const templateVars = {user};
+  const user = users[req.cookies['user_id']];
   if (user) {
-    res.redirect('/urls');
-  } else res.render('urls_login', templateVars);
+    return res.redirect('/urls');
+  }
+  const templateVars = {user};
+  return res.render('urls_login', templateVars);
 });
 
 // route for login redirect to index
 app.post('/urls/login', (req, res) => {
   const {email, password} = req.body;
-  if (userLookup(email) === null) {
+  const user = userLookup(email);
+  if (!user) {
     return res.status(403).redirect('/register');
   }
-  const user = userLookup(email);
-  if (userLookup(email)) {
-    if (password !== user.password) {
-      return res.status(403).send("Wrong password!");
-    } else {
-      return res.cookie('user_id', user.id).redirect('/urls');
-    }
+  if (password !== user.password) {
+    return res.status(403).send("Wrong password!");
+  } else {
+    return res.cookie('user_id', user.id).redirect('/urls');
   }
 });
 
@@ -197,12 +194,12 @@ app.get('/u/:id', (req, res) => {
     return res.send("We don't have that one yet.");
   }
   const longURL = urlDatabase[req.params.id].longURL;
-  res.redirect(longURL);
+  return res.redirect(longURL);
 });
 
 // route for delete button and removal from database
 app.post('/urls/:id/delete', (req, res) => {
-  const user = users[req.cookies['user_id']] || null;
+  const user = users[req.cookies['user_id']];
   const { id } = req.params;
   const urls = urlDatabase;
   // return message if id does not exist
@@ -218,15 +215,14 @@ app.post('/urls/:id/delete', (req, res) => {
     return res.status(404).send("URL does not belong to user");
   }
   delete urlDatabase[id];
-  res.redirect('/urls');
+  return res.redirect('/urls');
 });
 
 // route to update longURL from form input and redirect to index
 app.post('/urls/:id/update', (req, res) => {
-  const user = users[req.cookies['user_id']] || null;
+  const user = users[req.cookies['user_id']];
   const { id } = req.params;
   const urls = urlDatabase;
-  const { longURL } = req.body;
   const userId = req.cookies['user_id'];
   // return message if id does not exist
   if (!urls[id]) {
@@ -240,11 +236,12 @@ app.post('/urls/:id/update', (req, res) => {
   if (urls[id].userId !== user.id) {
     return res.status(404).send("URL does not belong to user");
   }
+  const { longURL } = req.body;
   urlDatabase[id] = {
     longURL,
     userId
   };
-  res.redirect('/urls');
+  return res.redirect('/urls');
 });
 
 
