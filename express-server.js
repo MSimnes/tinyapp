@@ -20,7 +20,6 @@ const generateRandomString = function() {
 const userLookup = function(email) {
   for (let user in users) {
     if (email === users[user].email) {
-      console.log("USER obj from userLookup", users[user]);
       return users[user];
     }
   }
@@ -28,10 +27,17 @@ const userLookup = function(email) {
 };
 
 const urlDatabase = {
-  'b2xVn2': 'http://www.lighthouselabs.ca',
-  '9sm5xK': 'http://www.google.com'
+  'b2xVn2': {
+    longURL: 'http://www.lighthouselabs.ca',
+    userId: null
+  },
+  '9sm5xK': {
+    longURL: 'http://www.google.com',
+    userId: null
+  }
 };
 
+// user database
 const users = {
 
 };
@@ -47,8 +53,11 @@ app.get('/urls.json', (req, res) => {
 // display list of shortened urls
 app.get('/urls', (req, res) => {
   const user = users[req.cookies['user_id']] || null;
+  const urls = urlDatabase;
+  const longURL = urls.longURL;
   const templateVars = {
-    urls: urlDatabase,
+    longURL,
+    urls,
     user
   };
   res.render('urls_index', templateVars);
@@ -56,12 +65,17 @@ app.get('/urls', (req, res) => {
 
 // update database and redirect to the id's own page
 app.post('/urls', (req, res) => {
-  if (!req.user) {
+  const newId = generateRandomString();
+  if (!req.cookies.user_id) {
     res.send("Must login first.");
     return;
   }
-  const newId = generateRandomString();
-  urlDatabase[newId] = req.body.longURL;
+  const userId = req.cookies.user_id;
+  const { longURL } = req.body;
+  urlDatabase[newId] = {
+    userId,
+    longURL
+  };
   res.redirect(`urls/${newId}`);
 });
 
@@ -75,10 +89,13 @@ app.get('/urls/new', (req, res) => {
 
 app.get('/urls/:id', (req, res) => {
   const user = users[req.cookies['user_id']] || null;
+  const { id } = req.params;
+  const urls = urlDatabase;
   const templateVars = {
+    urls,
     user,
-    id: req.params.id,
-    longURL: urlDatabase[req.params.id],
+    id,
+    longURL: urlDatabase[id].longURL
   };
   res.render('urls_show', templateVars);
 });
@@ -95,15 +112,10 @@ app.get('/register', (req, res) => {
 // generate unique id, create new user, add new user to users, save cookies
 app.post('/urls/register', (req, res) => {
   const {email, password} = req.body;
-  // console.log("email ", email);
   if (email === "" || password === "") {
-    res.status(400).send('Please fill in all fields');
-    return;
+    return res.status(400).send('Please fill in all fields');
   } else if (userLookup(email)) {
-    //current compass directions say to send 400 and message,
-    //instead i redirected to login
-    res.status(400).redirect('/login');
-    return;
+    return res.status(400).redirect('/login');
   } else;
   const id = generateRandomString();
   users[id] = {
@@ -112,9 +124,6 @@ app.post('/urls/register', (req, res) => {
     password,
   };
   res.cookie('user_id', id);
-  // console.log("id", id,);
-  // console.log("users[id] ", users[id]);
-  // console.log("Current users object", users);
   res.redirect('/urls');
 });
 
@@ -131,46 +140,42 @@ app.get('/login', (req, res) => {
 app.post('/urls/login', (req, res) => {
   const {email, password} = req.body;
   if (userLookup(email) === null) {
-    /// current compass directions say to issue 403 with a response
-    /// instead I redirected to /register
-    res.status(403).redirect('/register');
-    return;
+    return res.status(403).redirect('/register');
   }
   const user = userLookup(email);
-  // console.log("user obj---", user);
   if (userLookup(email)) {
     if (password !== user.password) {
-      res.status(403).send("Wrong password!");
-      return;
+      return res.status(403).send("Wrong password!");
     } else {
-      res.cookie('user_id', user.id).redirect('/urls');
+      return res.cookie('user_id', user.id).redirect('/urls');
     }
   }
 });
 
 // redirect to actual site of long URL
 app.get('/u/:id', (req, res) => {
-  for (let id in urlDatabase) {
-    if (id !== urlDatabase[urlDatabase.id]) {
-      res.send("We don't have that one yet.");
-      return;
-    }
+  const { id } = req.params;
+  if (!urlDatabase[id]) {
+    return res.send("We don't have that one yet.");
   }
-  const longURL = urlDatabase[req.params.id];
+  const longURL = urlDatabase[req.params.id].longURL;
   res.redirect(longURL);
 });
 
 // route for delete button and removal from database
 app.post('/urls/:id/delete', (req, res) => {
-  delete urlDatabase[req.params.id];
+  const { id } = req.params;
+  delete urlDatabase[id];
   res.redirect('/urls');
 });
 
 // route to update longURL from form input and redirect to index
 app.post('/urls/:id/update', (req, res) => {
-  const id = req.params.id;
-  const newURL = req.body.longURL;
-  urlDatabase[id] = newURL;
+  const { id } = req.params;
+  const { longURL } = req.body;
+  urlDatabase[id] = {
+    longURL,
+  };
   res.redirect('/urls');
 });
 
