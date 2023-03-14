@@ -4,8 +4,8 @@ TinyApp is a full stack web application built with Node and Express that allows 
 
 ## Final Product
 
-!["Login Form"](#docs/Login Form.png)
-!["List of URLs once logged in"](#docs/URLs-Index.png)
+!["Login Form"](https://github.com/MSimnes/tinyapp/blob/main/docs/Login%20Form.png?raw=true)
+!["List of URLs once logged in"](https://github.com/MSimnes/tinyapp/blob/main/docs/URLs-Index.png?raw=true)
 
 ## Dependencies
 
