@@ -39,7 +39,16 @@ const users = {
 };
 
 app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}`);
+  console.log(`TinyApp listening on port ${PORT}`);
+});
+
+app.get('/', (req, res) =>{
+  const id = req.session['user_id'];
+  const user = users[id];
+  if (!user) {
+    return res.redirect("/login");
+  }
+  res.redirect('/urls');
 });
 
 // display list of shortened urls
@@ -132,9 +141,8 @@ app.post('/urls/register', (req, res) => {
     email,
     hashedPassword,
   };
-  console.log("id-- ", id);
+  // eslint-disable-next-line camelcase
   req.session.user_id = id;
-  console.log("req.session.user_id ---", req.session.user_id);
   res.redirect('/urls');
 });
 
@@ -148,7 +156,7 @@ app.get('/login', (req, res) => {
   return res.render('urls_login', templateVars);
 });
 
-// route for login redirect to index
+// route for successful login to redirect to /urls
 app.post('/urls/login', (req, res) => {
   const {email, password} = req.body;
   const user = getUserByEmail(email, users);
@@ -160,6 +168,7 @@ app.post('/urls/login', (req, res) => {
   if (!loggedIn) {
     return res.status(403).send("Wrong password!");
   } else {
+    // eslint-disable-next-line camelcase
     req.session.user_id = user.id;
     res.redirect('/urls');
   }
@@ -222,7 +231,7 @@ app.post('/urls/:id/update', (req, res) => {
   return res.redirect('/urls');
 });
 
-// route for logout redirect to index
+// route for logout redirect to /login
 app.post('/urls/logout', (req, res) => {
   req.session = null;
   res.redirect('/login');
