@@ -12,34 +12,7 @@ app.use(cookieSession({
   keys: ['key']
 }));
 
-const generateRandomString = function() {
-  let result = '';
-  const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUV123456789';
-  const charLength = characters.length;
-  for (let i = 0; i < 6; i++) {
-    result += characters.charAt(Math.floor(Math.random() * charLength));
-  }
-  return result;
-};
-
-const { getUserByEmail } = require('./helpers');
-
-
-/**
- * Returns an object containing short URL keys and corresponding long URL values
- * for a given user ID.
- * @param {string} user_Id - User ID to match against the 'userId' property in the 'urlDatabase' object.
- * @returns {Object} An object containing short URL keys and corresponding long URL values for the given user ID.
- */
-const urlsForUserId = function(userId) {
-  const matchingURLsObj = {};
-  for (let key in urlDatabase) {
-    if (urlDatabase[key]['userId'] === userId) {
-      matchingURLsObj[key] = urlDatabase[key]['longURL'];
-    }
-  }
-  return matchingURLsObj;
-};
+const { getUserByEmail, generateRandomString, urlsForUserId } = require('./helpers');
 
 const urlDatabase = {
   'b2xVn2': {
@@ -76,7 +49,7 @@ app.get('/urls', (req, res) => {
   if (!user) {
     return res.redirect("/login");
   }
-  const userSpecificUrls = urlsForUserId(id);
+  const userSpecificUrls = urlsForUserId(id, urlDatabase);
   const templateVars = {
     userSpecificUrls,
     user
